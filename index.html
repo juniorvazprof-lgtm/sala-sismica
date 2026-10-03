@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sala Sísmica</title>
+<meta name="description" content="Laboratório virtual 3D de ondas sísmicas: sismo em corte, mola e corda e construções na mesa vibratória.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{color-scheme:dark;--ink:#ece6da;--mute:#9aa3a8;--glass:rgba(16,20,24,.78);--line:rgba(255,255,255,.1);--p:#5cc4ee;--s:#f0aa45;--sans:"Chivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+[hidden]{display:none!important}
+html,body{height:100%;background:#0b0d10;color:var(--ink);overflow:hidden}
+body{font-family:var(--sans);font-size:13px}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.panel{position:fixed;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:10px;padding:12px 14px;z-index:2}
+#info,#info2,#info3{top:calc(12px + env(safe-area-inset-top,0px));left:12px;width:min(330px,calc(100% - 24px))}
+#ctrl,#ctrl2,#ctrl3{top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:300px;max-height:calc(100% - 24px);overflow:auto;display:flex;flex-direction:column;gap:10px}
+.eyebrow{font:600 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+h1{margin:2px 0 4px;font-weight:900;font-size:24px;letter-spacing:-.01em;color:#9fd8f5}
+summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:none}
+.lead{color:#c9c4ba;line-height:1.45;margin:0 0 10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.stat{background:rgba(0,0,0,.35);border-radius:6px;padding:5px 7px}
+.stat b{display:block;font:600 13px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.stat span{font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font:12px var(--mono);font-variant-numeric:tabular-nums}
+td,th{padding:3px 4px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-weight:400;color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.note{margin-top:10px;background:rgba(0,0,0,.35);border-radius:6px;padding:8px 10px;line-height:1.45;color:#d8d2c6;min-height:3em}
+.note b{color:var(--s)}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+button{font:600 12px var(--sans);color:var(--ink);background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:6px;padding:6px 9px;cursor:pointer}
+button:hover{background:rgba(255,255,255,.14)}
+button.on{background:#e9e4d8;color:#15181b}
+button.fire{background:var(--s);color:#1b1206;border-color:var(--s);font-size:14px;padding:9px;width:100%}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+.sl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+.sl label{font-size:12px;color:#cfc9bd}
+.sl output{font:600 12px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.sl input{grid-column:1/-1;width:100%;accent-color:var(--s)}
+select{grid-column:1/-1;background:#15191d;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px;font:12px var(--sans)}
+.tg{display:flex;gap:6px;align-items:center;color:#cfc9bd;font-size:12px}
+.tgs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.hint{color:var(--mute);font-size:11px;line-height:1.4;margin:0}
+#tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:3;display:flex;gap:4px;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;padding:4px}
+#tabs button{border-radius:999px;border:0;padding:8px 16px;font-size:13px;background:transparent}
+#tabs button.on{background:#e9e4d8;color:#15181b}
+.obs{margin:10px 0 0;padding-left:18px;color:#cfc9bd;line-height:1.5;display:flex;flex-direction:column;gap:2px}
+.leg{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--mute);margin-top:8px}
+.leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#fallback{position:fixed;inset:0;display:grid;place-items:center;color:var(--mute);padding:20px;text-align:center}
+@media (max-width:760px){
+  #info{padding:10px 12px}
+  #info .body{max-height:32vh;overflow:auto}
+  #ctrl,#ctrl2,#ctrl3{top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:12px;right:12px;width:auto;max-height:40vh}
+  #info,#info2,#info3{top:calc(60px + env(safe-area-inset-top,0px))}
+  #tabs{top:calc(10px + env(safe-area-inset-top,0px));bottom:auto;max-width:calc(100% - 24px)}
+  #tabs button{padding:8px 10px;font-size:12px;white-space:nowrap}
+  h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<div id="fallback">Carregando o laboratório…</div>
+<canvas id="c"></canvas>
+
+<details class="panel" id="info" open>
+  <summary><div class="eyebrow">Onde a rocha se rompe</div><h1>SALA SÍSMICA</h1></summary>
+  <div class="body">
+    <p class="lead">Uma maquete da crosta em corte. Dispare o sismo e veja as ondas P (compressão) e S (cisalhamento) saírem do hipocentro e chegarem aos sismógrafos A, B e C. Arraste os sismógrafos e gire os botões da bancada.</p>
+    <div class="stats">
+      <div class="stat"><span>Prof.</span><b id="sD">8 km</b></div>
+      <div class="stat"><span>V<sub>P</sub></span><b id="sP">6,0</b></div>
+      <div class="stat"><span>V<sub>S</sub></span><b id="sS">3,5</b></div>
+      <div class="stat"><span>Mag.</span><b id="sM">4,0</b></div>
+    </div>
+    <table><thead><tr><th>Est.</th><th>P</th><th>S</th><th>Δt</th><th>dist.</th></tr></thead><tbody id="tb"></tbody></table>
+    <div class="note" id="note"></div>
+  </div>
+</details>
+
+<div class="panel" id="ctrl">
+  <div class="eyebrow">Experimentos</div>
+  <div class="seg" id="presets">
+    <button data-p="sam">Samambaia (raso)</button><button data-p="deep">Profundo</button><button data-p="soft">Rocha mole</button><button data-p="tri">Triangular</button>
+  </div>
+  <button class="fire" id="bFire">▶ Disparar sismo</button>
+  <div class="sl"><label for="rM">Magnitude</label><output id="oM"></output><input type="range" id="rM" min="2" max="6.5" step="0.1" value="4"></div>
+  <div class="sl"><label for="rD">Profundidade do hipocentro</label><output id="oD"></output><input type="range" id="rD" min="2" max="27" step="0.5" value="8"></div>
+  <div class="sl"><label for="rX">Epicentro · oeste–leste</label><output id="oX"></output><input type="range" id="rX" min="4" max="76" step="1" value="46"></div>
+  <div class="sl"><label for="rZ">Epicentro · norte–sul</label><output id="oZ"></output><input type="range" id="rZ" min="4" max="36" step="1" value="22"></div>
+  <div class="sl"><label for="rock">Tipo de rocha</label><output id="oR"></output>
+    <select id="rock"><option value="granito">Granito (crosta continental)</option><option value="basalto">Basalto (denso)</option><option value="arenito">Arenito (sedimentar)</option></select></div>
+  <div class="sl"><label for="rV">Velocidade da simulação</label><output id="oV"></output><input type="range" id="rV" min="0.5" max="8" step="0.5" value="3"></div>
+  <div class="eyebrow">Vista</div>
+  <div class="seg" id="views"><button data-v="lab" class="on">Lab</button><button data-v="corte">Corte</button><button data-v="mapa">Mapa</button></div>
+  <div class="tgs">
+    <label class="tg"><input type="checkbox" id="tPart" checked> partículas</label>
+    <label class="tg"><input type="checkbox" id="tCirc" checked> círculos</label>
+    <label class="tg"><input type="checkbox" id="tChal"> desafio</label>
+    <label class="tg"><input type="checkbox" id="tHQ"> alta qualidade</label>
+  </div>
+  <p class="hint">Desafio: esconde o hipocentro e as ondas. Use os círculos de distância na vista Mapa para achar o epicentro.</p>
+</div>
+
+<div id="tabs" role="tablist">
+  <button data-m="crust" class="on" role="tab">Sismo em corte</button>
+  <button data-m="wave" role="tab">Mola e corda</button>
+  <button data-m="build" role="tab">Construções</button>
+</div>
+
+<details class="panel" id="info3" open hidden>
+  <summary><div class="eyebrow">Mesa vibratória</div><h1>CONSTRUÇÕES</h1></summary>
+  <div class="body">
+    <p class="lead">Uma casa térrea e um sobrado sobre uma mesa que imita o chão durante um sismo. A base anda com o chão; o topo, por inércia, fica para trás. Essa diferença entorta as paredes e abre rachaduras.</p>
+    <div class="stats">
+      <div class="stat"><span>Mercalli</span><b id="bMMI">VI</b></div>
+      <div class="stat"><span>Acel.</span><b id="bPGA">0,12 g</b></div>
+      <div class="stat"><span>Freq.</span><b id="bF">5 Hz</b></div>
+      <div class="stat"><span>Solo</span><b id="bSo">rocha</b></div>
+    </div>
+    <table><thead><tr><th>Construção</th><th>f₀</th><th>desloc. máx</th><th>estado</th></tr></thead><tbody id="tb3"></tbody></table>
+    <div class="note" id="note3"></div>
+    <ol class="obs">
+      <li>Com intensidade baixa: por que o topo atrasa em relação à base?</li>
+      <li>Troque a onda S pela P. Qual causa mais dano?</li>
+      <li>Frequência em 4 Hz, depois em 8 Hz. Quem sofre mais em cada caso?</li>
+      <li>Repita com “vigas e pilares”. O que mudou?</li>
+      <li>Troque rocha por sedimento, com a mesma intensidade.</li>
+    </ol>
+    <div class="leg"><span>Deslocamentos exagerados 50× para ficarem visíveis.</span></div>
+  </div>
+</details>
+
+<div class="panel" id="ctrl3" hidden>
+  <div class="eyebrow">Cenários</div>
+  <div class="seg" id="bPresets">
+    <button data-p="jc">João Câmara 1986</button><button data-p="rc">Ressonância da casa</button><button data-p="rs">Ressonância do sobrado</button><button data-p="vp">Com vigas e pilares</button>
+  </div>
+  <div class="seg"><button class="fire" id="bShake" style="flex:2">▶ Tremer</button><button id="bReset" style="flex:1">Reconstruir</button></div>
+  <div class="sl"><label for="bI">Intensidade (Mercalli)</label><output id="obI"></output><input type="range" id="bI" min="3" max="9" step="0.1" value="6"></div>
+  <div class="sl"><label for="bFr">Frequência do tremor</label><output id="obF"></output><input type="range" id="bFr" min="1" max="12" step="0.1" value="5"></div>
+  <div class="sl"><label for="bSl">Câmera lenta</label><output id="obSl"></output><input type="range" id="bSl" min="0.1" max="1" step="0.05" value="0.35"></div>
+  <div class="sl"><label for="bType">Tipo de construção</label><output></output>
+    <select id="bType"><option value="sem">Alvenaria sem amarração</option><option value="conf">Alvenaria com vigas e pilares</option><option value="ref">Estrutura reforçada (norma)</option></select></div>
+  <div class="sl"><label for="bSoil">Solo</label><output></output>
+    <select id="bSoil"><option value="rocha">Rocha firme</option><option value="sed">Sedimento fofo (amplifica)</option></select></div>
+  <div class="eyebrow">Onda que chega</div>
+  <div class="seg" id="bWave"><button data-w="S" class="on" style="flex:1">S · lateral</button><button data-w="P" style="flex:1">P · vertical</button></div>
+  <div class="tgs">
+    <label class="tg"><input type="checkbox" id="bX"> raio-x</label>
+    <label class="tg"><input type="checkbox" id="bH"> mapa de dano</label>
+  </div>
+  <p class="hint">Raio-x mostra pilares e vigas por dentro das paredes. Os botões da bancada controlam intensidade e frequência.</p>
+</div>
+
+<details class="panel" id="info2" open hidden>
+  <summary><div class="eyebrow">Como a rocha se move</div><h1>MOLA E CORDA</h1></summary>
+  <div class="body">
+    <p class="lead">A <b style="color:var(--p)">mola</b> mostra a onda P: as espiras são empurradas e puxadas na mesma direção em que a onda anda. A <b style="color:var(--s)">corda</b> mostra a onda S: ela balança para cima e para baixo, perpendicular à direção da onda.</p>
+    <div class="stats">
+      <div class="stat"><span>V<sub>P</sub></span><b id="wVp">6,0</b></div>
+      <div class="stat"><span>V<sub>S</sub></span><b id="wVs">3,5</b></div>
+      <div class="stat"><span>λ<sub>P</sub></span><b id="wLp">6 km</b></div>
+      <div class="stat"><span>λ<sub>S</sub></span><b id="wLs">3,5 km</b></div>
+    </div>
+    <div class="note" id="note2"></div>
+    <ol class="obs">
+      <li>Para que lado a bolinha vermelha da mola se move? E a da corda?</li>
+      <li>A bolinha viaja junto com a onda ou volta para o lugar?</li>
+      <li>Qual onda acende o sensor primeiro?</li>
+      <li>Aumente a frequência: o que acontece com o comprimento de onda?</li>
+    </ol>
+    <div class="leg"><span><i style="background:#5cc4ee"></i>espiras comprimidas</span><span><i style="background:#ff4a3a"></i>partícula marcada</span><span><i style="background:#8b949c"></i>posição de repouso</span></div>
+  </div>
+</details>
+
+<div class="panel" id="ctrl2" hidden>
+  <div class="eyebrow">Gerador de ondas</div>
+  <div class="seg"><button class="fire" id="wPulse" style="flex:1">▶ Gerar pulso</button></div>
+  <div class="seg"><button id="wCont" style="flex:1">Onda contínua</button><button id="wStop" style="flex:1">Parar</button></div>
+  <div class="sl"><label for="wA">Amplitude</label><output id="owA"></output><input type="range" id="wA" min="0.1" max="1" step="0.05" value="0.6"></div>
+  <div class="sl"><label for="wF">Frequência</label><output id="owF"></output><input type="range" id="wF" min="0.4" max="2" step="0.1" value="1"></div>
+  <div class="sl"><label for="wSl">Câmera lenta</label><output id="owSl"></output><input type="range" id="wSl" min="0.15" max="1.5" step="0.05" value="0.5"></div>
+  <div class="sl"><label for="wRock">Meio (rocha)</label><output id="owR"></output>
+    <select id="wRock"><option value="granito">Granito</option><option value="basalto">Basalto</option><option value="arenito">Arenito</option></select></div>
+  <div class="tgs">
+    <label class="tg"><input type="checkbox" id="wArr" checked> setas</label>
+    <label class="tg"><input type="checkbox" id="wMark" checked> partícula marcada</label>
+  </div>
+  <p class="hint">Os botões da bancada também funcionam aqui: o da esquerda muda a amplitude e o da direita, a frequência.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(function(){
+if(!window.THREE){document.getElementById("fallback").textContent="Não foi possível carregar o motor 3D. Verifique a conexão e recarregue.";return}
+document.getElementById("fallback").hidden=true;
+const $=id=>document.getElementById(id);
+const fmt=(v,d=1)=>v.toFixed(d).replace(".",",");
+
+/* ---------------- parâmetros ---------------- */
+const ROCKS={granito:{vp:6.0,vs:3.5,name:"granito"},basalto:{vp:6.8,vs:3.9,name:"basalto"},arenito:{vp:3.2,vs:1.8,name:"arenito"}};
+const P={mag:4,depth:8,ex:46,ez:22,rock:"granito",speed:3};
+const S=0.02,WKM=80,HKM=30,DKM=40,TOP=1.56,BW=WKM*S,BH=HKM*S,BD=DKM*S;
+const TMAX=40;
+let t=0,running=false,fired=false;
+const stations=[{n:"A",x:12,z:8,c:0xc792f5,css:"#c792f5"},{n:"B",x:70,z:11,c:0x6fe0b5,css:"#6fe0b5"},{n:"C",x:38,z:35,c:0xf5809f,css:"#f5809f"}];
+const vp=()=>ROCKS[P.rock].vp, vs=()=>ROCKS[P.rock].vs;
+const W3=(x,z,d)=>new THREE.Vector3((x-WKM/2)*S,TOP-d*S,(z-DKM/2)*S);
+const hyp=s=>Math.hypot(s.x-P.ex,s.z-P.ez,P.depth);
+const ampF=()=>Math.pow(10,0.5*(P.mag-4));
+
+/* ---------------- renderer / cena ---------------- */
+const canvas=$("c");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+renderer.localClippingEnabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0d0f12);scene.fog=new THREE.Fog(0x0d0f12,6,14);
+const camera=new THREE.PerspectiveCamera(42,1,0.05,50);camera.position.set(0.2,2.25,3.1);
+const controls=new THREE.OrbitControls(camera,canvas);controls.target.set(0,1.15,0);controls.enableDamping=true;
+controls.minDistance=0.8;controls.maxDistance=6;controls.maxPolarAngle=Math.PI*0.49;
+if(THREE.RoomEnvironment){const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new THREE.RoomEnvironment(),0.04).texture;}
+
+scene.add(new THREE.HemisphereLight(0xbfd4ff,0x2a1e14,0.35));
+const spot=new THREE.SpotLight(0xffe2bb,2.2,12,0.55,0.5,1.2);spot.position.set(0.6,4.6,1.6);spot.target.position.set(0,1,0);
+spot.castShadow=true;spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-0.0005;scene.add(spot,spot.target);
+const rim=new THREE.PointLight(0x6fb6ff,0.6,6);rim.position.set(-2.2,2,-1.5);scene.add(rim);
+
+function canvasTex(w,h,draw,rep){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const tx=new THREE.CanvasTexture(c);tx.encoding=THREE.sRGBEncoding;if(rep){tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(rep,rep)}tx.anisotropy=4;return tx}
+
+// piso de cerâmica
+const floorTex=canvasTex(512,512,(x,w,h)=>{x.fillStyle="#cfc6b8";x.fillRect(0,0,w,h);
+  for(let i=0;i<2;i++)for(let j=0;j<2;j++){const g=200+Math.random()*20|0;x.fillStyle=`rgb(${g},${g-8},${g-20})`;x.fillRect(i*256+3,j*256+3,250,250)}
+  x.strokeStyle="#8f877a";x.lineWidth=5;x.strokeRect(0,0,256,256);x.strokeRect(256,256,256,256);x.strokeRect(256,0,256,256);x.strokeRect(0,256,256,256)},6);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.MeshStandardMaterial({map:floorTex,roughness:0.35,metalness:0.05}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+// parede com painéis
+const wallTex=canvasTex(512,256,(x,w,h)=>{x.fillStyle="#1d1a19";x.fillRect(0,0,w,h);for(let i=0;i<8;i++){x.fillStyle=i%2?"#221e1c":"#1a1716";x.fillRect(i*64,0,62,h)}},0);
+wallTex.wrapS=THREE.RepeatWrapping;wallTex.repeat.set(4,1);
+const wall=new THREE.Mesh(new THREE.PlaneGeometry(14,5),new THREE.MeshStandardMaterial({map:wallTex,roughness:0.9}));wall.position.set(0,2.5,-3.2);scene.add(wall);
+// luzes de fundo (bokeh)
+[[-3.5,2.2,0xffb46a],[-2.4,1.1,0xffc98a],[2.9,2.6,0xffb46a],[3.8,1.3,0x9fd0ff],[1.6,3.3,0xffd9a8],[-1.2,3.5,0xffb46a]].forEach(([x,y,c])=>{
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.07,16,12),new THREE.MeshBasicMaterial({color:c,toneMapped:false}));m.position.set(x,y,-3.1);scene.add(m)});
+const shelf=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.05,0.4),new THREE.MeshStandardMaterial({color:0x3a2c20,roughness:0.6}));shelf.position.set(2.8,1.9,-2.95);scene.add(shelf);
+[[2.1,0x8fa3b0],[2.6,0xb08f6a],[3.1,0x6a7f8f],[3.5,0x9d9d9d]].forEach(([x,c],i)=>{const g=i%2?new THREE.OctahedronGeometry(0.12):new THREE.DodecahedronGeometry(0.1);const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:c,roughness:0.4,metalness:0.3}));m.position.set(x,2.04,-2.95);scene.add(m)});
+
+/* ---------------- bancada ---------------- */
+const metal=new THREE.MeshStandardMaterial({color:0x5b636c,roughness:0.45,metalness:0.6});
+const darkMetal=new THREE.MeshStandardMaterial({color:0x2a2f35,roughness:0.5,metalness:0.5});
+const bench=new THREE.Mesh(new THREE.BoxGeometry(3.3,0.84,1.3),metal);bench.position.set(0,0.42,-0.05);bench.castShadow=bench.receiveShadow=true;scene.add(bench);
+const topTex=canvasTex(256,256,(x,w,h)=>{x.fillStyle="#34393f";x.fillRect(0,0,w,h);x.fillStyle="#2b2f34";for(let i=0;i<w;i+=16)for(let j=0;j<h;j+=16){x.beginPath();x.arc(i+8,j+8,1.6,0,7);x.fill()}},8);
+const top=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.06,1.4),new THREE.MeshStandardMaterial({map:topTex,roughness:0.6,metalness:0.4}));top.position.set(0,0.87,-0.05);top.receiveShadow=top.castShadow=true;scene.add(top);
+const trim=new THREE.Mesh(new THREE.BoxGeometry(3.3,0.02,0.02),new THREE.MeshStandardMaterial({color:0x111111,roughness:0.3}));trim.position.set(0,0.9,0.5);scene.add(trim);
+
+// console inclinado
+const consoleG=new THREE.Group();consoleG.position.set(0,0.55,0.72);consoleG.rotation.x=-0.42;scene.add(consoleG);
+const cbox=new THREE.Mesh(new THREE.BoxGeometry(3.3,0.5,0.14),darkMetal);cbox.castShadow=true;consoleG.add(cbox);
+const bezel=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.44,0.02),new THREE.MeshStandardMaterial({color:0x7a828b,roughness:0.35,metalness:0.7}));bezel.position.z=0.07;consoleG.add(bezel);
+
+function makeScreen(x,w){
+  const cv=document.createElement("canvas");cv.width=1024;cv.height=Math.round(1024*0.32/w);
+  const tx=new THREE.CanvasTexture(cv);tx.encoding=THREE.sRGBEncoding;
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(w+0.04,0.36,0.02),new THREE.MeshStandardMaterial({color:0x15181b,roughness:0.4}));frame.position.set(x,0,0.085);consoleG.add(frame);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,0.32),new THREE.MeshBasicMaterial({map:tx,toneMapped:false}));m.position.set(x,0,0.097);consoleG.add(m);
+  return {cv,ctx:cv.getContext("2d"),tx};
+}
+const scr1=makeScreen(-0.42,1.05),scr2=makeScreen(0.72,0.85);
+
+const knobs=[];
+function makeKnob(x,color,label,key,min,max){
+  const g=new THREE.Group();g.position.set(x,0,0.09);consoleG.add(g);
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.4,0.01),new THREE.MeshStandardMaterial({color:0x1e2226,roughness:0.5}));g.add(plate);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.13,0.008,12,64,Math.PI*1.6),new THREE.MeshBasicMaterial({color,toneMapped:false}));ring.rotation.z=-Math.PI*0.3-Math.PI/2+Math.PI;ring.position.z=0.01;g.add(ring);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.1,0.06,40),new THREE.MeshStandardMaterial({color:0xe7e2d6,roughness:0.3,metalness:0.2}));body.rotation.x=Math.PI/2;body.position.z=0.04;g.add(body);
+  const dial=new THREE.Group();dial.position.z=0.071;g.add(dial);
+  const ind=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.06,0.004),new THREE.MeshBasicMaterial({color:0x222222}));ind.position.y=0.05;dial.add(ind);
+  const lab=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.05),new THREE.MeshBasicMaterial({transparent:true,map:canvasTex(256,44,(c,w,h)=>{c.fillStyle="#9aa3a8";c.font="600 24px JetBrains Mono,monospace";c.textAlign="center";c.fillText(label,w/2,30)})}));
+  lab.position.set(0,-0.165,0.006);g.add(lab);
+  const k={g,dial,body,lab,key,min,max};knobs.push(k);body.userData.knob=k;return k;
+}
+makeKnob(-1.37,0xffb45a,"ENERGIA","mag",2,6.5);
+makeKnob(1.37,0x7fd4ff,"PROFUNDIDADE","depth",2,27);
+
+/* ---------------- bloco da crosta ---------------- */
+const blockY=TOP-BH/2;
+const plinth=new THREE.Mesh(new THREE.BoxGeometry(BW+0.12,0.06,BD+0.12),darkMetal);plinth.position.set(0,TOP-BH-0.03,0);plinth.castShadow=plinth.receiveShadow=true;scene.add(plinth);
+const clip=[new THREE.Plane(new THREE.Vector3(1,0,0),BW/2),new THREE.Plane(new THREE.Vector3(-1,0,0),BW/2),
+  new THREE.Plane(new THREE.Vector3(0,1,0),-(TOP-BH)),new THREE.Plane(new THREE.Vector3(0,-1,0),TOP+0.001),
+  new THREE.Plane(new THREE.Vector3(0,0,1),BD/2),new THREE.Plane(new THREE.Vector3(0,0,-1),BD/2)];
+const clipXZ=[clip[0],clip[1],clip[4],clip[5]];
+// camadas
+const layers=[{d0:0,d1:3,c:0x9b7550,o:0.55},{d0:3,d1:12,c:0x8d8f94,o:0.16},{d0:12,d1:30,c:0x5f6a78,o:0.2}];
+const layerMeshes=[];
+layers.forEach(L=>{const h=(L.d1-L.d0)*S;const m=new THREE.Mesh(new THREE.BoxGeometry(BW,h,BD),new THREE.MeshStandardMaterial({color:L.c,transparent:true,opacity:L.o,roughness:0.6,depthWrite:false}));
+  m.position.set(0,TOP-L.d0*S-h/2,0);m.renderOrder=1;scene.add(m);layerMeshes.push(m)});
+const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BW,BH,BD)),new THREE.LineBasicMaterial({color:0xd8e6f0,transparent:true,opacity:0.5}));edges.position.set(0,blockY,0);scene.add(edges);
+// régua de profundidade
+const ruler=new THREE.Mesh(new THREE.PlaneGeometry(0.16,BH),new THREE.MeshBasicMaterial({transparent:true,map:canvasTex(64,480,(x,w,h)=>{x.fillStyle="#cfd8de";x.font="600 13px JetBrains Mono,monospace";
+  for(let d=0;d<=30;d+=2){const y=d/30*(h-8)+4;x.fillRect(w-(d%10?10:20),y-1,d%10?10:20,2);if(d%10===0)x.fillText(d+"km",0,Math.max(12,y+4))}})}));
+ruler.position.set(-BW/2-0.1,blockY,BD/2);scene.add(ruler);
+
+// falha (plano vertical, direção NE)
+const fault=new THREE.Mesh(new THREE.PlaneGeometry(0.9,BH),new THREE.MeshBasicMaterial({color:0xff6a4a,transparent:true,opacity:0.14,side:THREE.DoubleSide,depthWrite:false,clippingPlanes:clip}));scene.add(fault);
+const faultEdge=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.9,BH)),new THREE.LineBasicMaterial({color:0xff7b5a,transparent:true,opacity:0.5,clippingPlanes:clip}));scene.add(faultEdge);
+
+// hipocentro e epicentro
+const hypo=new THREE.Mesh(new THREE.SphereGeometry(0.022,24,16),new THREE.MeshBasicMaterial({color:0xff5a3c,toneMapped:false}));scene.add(hypo);
+const hypoGlow=new THREE.PointLight(0xff6a40,0,1.2);scene.add(hypoGlow);
+const epi=new THREE.Mesh(new THREE.RingGeometry(0.02,0.03,32),new THREE.MeshBasicMaterial({color:0xff5a3c,side:THREE.DoubleSide,toneMapped:false}));epi.rotation.x=-Math.PI/2;scene.add(epi);
+const drop=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineDashedMaterial({color:0xff7b5a,dashSize:0.015,gapSize:0.012}));scene.add(drop);
+
+// frentes de onda
+function shell(color){const m=new THREE.Mesh(new THREE.SphereGeometry(1,64,40),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.22,side:THREE.DoubleSide,depthWrite:false,clippingPlanes:clip,toneMapped:false}));m.renderOrder=3;scene.add(m);return m}
+const shP=shell(0x5cc4ee),shS=shell(0xf0aa45);
+
+// partículas no plano de corte
+const NX=90,NY=34,N=NX*NY;const base=new Float32Array(N*2);
+const pGeo=new THREE.BufferGeometry();const pPos=new Float32Array(N*3),pCol=new Float32Array(N*3);
+for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const k=j*NX+i;base[k*2]=(i+0.5)/NX*WKM;base[k*2+1]=(j+0.5)/NY*HKM}
+pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));pGeo.setAttribute("color",new THREE.BufferAttribute(pCol,3));
+const pts=new THREE.Points(pGeo,new THREE.PointsMaterial({size:0.011,vertexColors:true,transparent:true,opacity:0.95,depthWrite:false,toneMapped:false}));pts.renderOrder=4;scene.add(pts);
+
+// círculos de triangulação
+const circles=stations.map(s=>{const g=new THREE.BufferGeometry().setFromPoints(Array.from({length:129},(_,i)=>new THREE.Vector3(Math.cos(i/128*Math.PI*2),0,Math.sin(i/128*Math.PI*2))));
+  const l=new THREE.Line(g,new THREE.LineDashedMaterial({color:s.c,dashSize:0.03,gapSize:0.02,clippingPlanes:clipXZ,toneMapped:false}));l.computeLineDistances();l.visible=false;scene.add(l);return l});
+
+/* ---------------- sismógrafos ---------------- */
+function labelSprite(txt,css){const tx=canvasTex(128,128,(x,w,h)=>{x.fillStyle=css;x.beginPath();x.arc(64,64,52,0,7);x.fill();x.fillStyle="#111";x.font="900 64px Chivo,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(txt,64,68)});
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));s.scale.set(0.07,0.07,1);s.renderOrder=10;return s}
+stations.forEach(s=>{
+  const g=new THREE.Group();scene.add(g);s.g=g;
+  const baseM=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.03,0.08),new THREE.MeshStandardMaterial({color:0x2c3137,roughness:0.4,metalness:0.6}));baseM.position.y=0.015;g.add(baseM);
+  const drum=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.07,24),new THREE.MeshStandardMaterial({color:0xf1ece0,roughness:0.5}));drum.rotation.z=Math.PI/2;drum.position.set(0,0.055,-0.01);g.add(drum);s.drum=drum;
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(0.004,0.004,0.05),new THREE.MeshStandardMaterial({color:s.c,roughness:0.3,metalness:0.5}));arm.position.set(0,0.078,0.02);g.add(arm);s.arm=arm;
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.003,0.12,8),new THREE.MeshStandardMaterial({color:0xaaaaaa,metalness:0.8,roughness:0.3}));post.position.set(0.045,0.09,0.03);g.add(post);
+  const lamp=new THREE.Mesh(new THREE.SphereGeometry(0.008,12,8),new THREE.MeshBasicMaterial({color:0x333333}));lamp.position.set(0.045,0.155,0.03);g.add(lamp);s.lamp=lamp;
+  const sp=labelSprite(s.n,s.css);sp.position.set(0,0.21,0);g.add(sp);
+  const hit=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.2,0.14),new THREE.MeshBasicMaterial({visible:false}));hit.position.y=0.08;hit.userData.station=s;g.add(hit);s.hit=hit;
+});
+
+/* ---------------- agrupa o experimento da crosta ---------------- */
+let MODE="crust";
+const crust=new THREE.Group();scene.add(crust);
+[plinth,edges,ruler,fault,faultEdge,hypo,hypoGlow,epi,drop,shP,shS,pts,...layerMeshes,...circles,...stations.map(s=>s.g)].forEach(o=>crust.add(o));
+
+/* ---------------- experimento 2: mola e corda ---------------- */
+const Q={amp:0.6,freq:1,slow:0.5,rock:"granito",arrows:true,mark:true};
+const WV={on:false,cont:false,tau:0,arrP:null,arrS:null,histP:[],histS:[]};
+const X0=-1.2,X1=1.2,LEN=X1-X0,VSC=0.16,YP=1.36,ZP=-0.22,YS=1.08,ZS=0.2,NC=64,NB=90,MC=22,MB=32;
+const waveLab=new THREE.Group();waveLab.visible=false;scene.add(waveLab);
+const vPs=()=>ROCKS[Q.rock].vp*VSC, vSs=()=>ROCKS[Q.rock].vs*VSC;
+const lamP=()=>vPs()/Q.freq, lamS=()=>vSs()/Q.freq;
+const chrome=new THREE.MeshStandardMaterial({color:0xc9ced4,roughness:0.25,metalness:0.9});
+function post(x,y0,y1,z){const m=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.014,y1-y0,16),darkMetal);m.position.set(x,(y0+y1)/2,z);m.castShadow=true;waveLab.add(m);
+  const f=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.055,0.015,24),darkMetal);f.position.set(x,y0+0.008,z);waveLab.add(f)}
+function textSprite(txt,col,w=0.62){const tx=canvasTex(512,90,(x,W,H)=>{x.fillStyle="rgba(10,14,18,.75)";x.beginPath();x.roundRect?x.roundRect(0,8,W,H-16,20):x.rect(0,8,W,H-16);x.fill();
+  x.fillStyle=col;x.font="900 40px Chivo,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(txt,W/2,H/2+2)});
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));s.scale.set(w,w*90/512,1);s.renderOrder=10;return s}
+// suportes
+post(X0-0.1,0.9,YP+0.03,ZP);post(X1+0.12,0.9,YP+0.03,ZP);post(X0-0.1,0.9,YS+0.18,ZS);post(X1+0.12,0.9,YS+0.02,ZS);
+const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.003,LEN+0.24,8),chrome);rod.rotation.z=Math.PI/2;rod.position.set(0.01,YP,ZP);waveLab.add(rod);
+// mola (espiras)
+const coils=[],coilX=[];
+const coilGeo=new THREE.TorusGeometry(0.05,0.0045,8,28);
+for(let i=0;i<NC;i++){const mat=new THREE.MeshStandardMaterial({color:0xc9ced4,roughness:0.25,metalness:0.85});
+  const c=new THREE.Mesh(coilGeo,i===MC?new THREE.MeshStandardMaterial({color:0xff4a3a,emissive:0x661008,roughness:0.3}):mat);
+  c.rotation.y=Math.PI/2;c.rotation.x=0.18;coilX[i]=X0+i*LEN/(NC-1);c.position.set(coilX[i],YP,ZP);c.castShadow=true;waveLab.add(c);coils.push(c)}
+const ballP=new THREE.Mesh(new THREE.SphereGeometry(0.016,20,14),new THREE.MeshStandardMaterial({color:0xff4a3a,emissive:0x881408,roughness:0.3}));waveLab.add(ballP);
+const restP=new THREE.Mesh(new THREE.BoxGeometry(0.003,0.07,0.003),new THREE.MeshBasicMaterial({color:0x8b949c}));restP.position.set(coilX[MC],YP-0.1,ZP);waveLab.add(restP);
+const restPtxt=textSprite("repouso","#9aa3a8",0.2);restPtxt.position.set(coilX[MC],YP-0.155,ZP);waveLab.add(restPtxt);
+const paddle=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.15,0.15),new THREE.MeshStandardMaterial({color:0x5cc4ee,roughness:0.4,metalness:0.3}));waveLab.add(paddle);
+// corda (contas)
+const beads=[],beadX=[];const beadGeo=new THREE.SphereGeometry(0.011,12,8),beadMat=new THREE.MeshStandardMaterial({color:0xb5733a,roughness:0.7});
+for(let i=0;i<NB;i++){beadX[i]=X0+i*LEN/(NB-1);const b=new THREE.Mesh(i===MB?new THREE.SphereGeometry(0.02,20,14):beadGeo,i===MB?ballP.material:beadMat);b.position.set(beadX[i],YS,ZS);b.castShadow=true;waveLab.add(b);beads.push(b)}
+const ropeGeo=new THREE.BufferGeometry();const ropePos=new Float32Array(NB*3);ropeGeo.setAttribute("position",new THREE.BufferAttribute(ropePos,3));
+const rope=new THREE.Line(ropeGeo,new THREE.LineBasicMaterial({color:0xd08a4a}));waveLab.add(rope);
+const axisS=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(X0,YS,ZS-0.001),new THREE.Vector3(X1,YS,ZS-0.001)]),new THREE.LineDashedMaterial({color:0x8b949c,dashSize:0.02,gapSize:0.015}));axisS.computeLineDistances();waveLab.add(axisS);
+const handle=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.04,0.06),new THREE.MeshStandardMaterial({color:0xf0aa45,roughness:0.4,metalness:0.3}));waveLab.add(handle);
+// sensores no fim
+function sensor(y,z){const g=new THREE.Group();g.position.set(X1+0.12,y,z);waveLab.add(g);
+  const b=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.09,0.09),new THREE.MeshStandardMaterial({color:0x1f2429,roughness:0.4,metalness:0.5}));g.add(b);
+  const l=new THREE.Mesh(new THREE.SphereGeometry(0.018,16,12),new THREE.MeshBasicMaterial({color:0x333333,toneMapped:false}));l.position.y=0.065;g.add(l);
+  const t=textSprite("SENSOR","#9aa3a8",0.2);t.position.y=0.12;g.add(t);return l}
+const lampP=sensor(YP,ZP),lampS=sensor(YS,ZS);
+// rótulos
+const labP=textSprite("ONDA P · mola","#5cc4ee");labP.position.set(X0+0.35,YP+0.15,ZP);waveLab.add(labP);
+const labS=textSprite("ONDA S · corda","#f0aa45");labS.position.set(X0+0.35,YS+0.2,ZS);waveLab.add(labS);
+// setas
+const arrows=new THREE.Group();waveLab.add(arrows);
+const mkArrow=(dir,o,len,col)=>{const a=new THREE.ArrowHelper(new THREE.Vector3(...dir).normalize(),new THREE.Vector3(...o),len,col,0.045,0.03);arrows.add(a);return a};
+mkArrow([1,0,0],[0.25,YP+0.15,ZP],0.45,0xe9e4d8);mkArrow([1,0,0],[0.25,YS+0.2,ZS],0.45,0xe9e4d8);
+const tProp1=textSprite("a onda viaja →","#e9e4d8",0.36);tProp1.position.set(0.47,YP+0.21,ZP);arrows.add(tProp1);
+const tProp2=textSprite("a onda viaja →","#e9e4d8",0.36);tProp2.position.set(0.47,YS+0.26,ZS);arrows.add(tProp2);
+const mP=new THREE.Group();arrows.add(mP);[1,-1].forEach(s=>{const a=new THREE.ArrowHelper(new THREE.Vector3(s,0,0),new THREE.Vector3(0,0,0),0.08,0x5cc4ee,0.03,0.022);mP.add(a)});
+const tmP=textSprite("partícula: vai e volta","#5cc4ee",0.4);tmP.position.y=-0.045;mP.add(tmP);
+const mS=new THREE.Group();arrows.add(mS);[1,-1].forEach(s=>{const a=new THREE.ArrowHelper(new THREE.Vector3(0,s,0),new THREE.Vector3(0,0,0),0.08,0xf0aa45,0.03,0.022);mS.add(a)});
+const tmS=textSprite("partícula: sobe e desce","#f0aa45",0.4);tmS.position.set(0.25,0,0);mS.add(tmS);
+mP.position.set(coilX[MC],YP-0.075,ZP+0.06);mS.position.set(beadX[MB]+0.05,YS,ZS+0.04);
+
+function disp(x,v,lam){ // deslocamento no ponto x: fonte oscila em X0
+  if(!WV.on)return 0;const s=v*WV.tau-(x-X0);if(s<0)return 0;if(!WV.cont&&s>lam)return 0;return Math.sin(2*Math.PI*s/lam)}
+function waveUpdate(dt){
+  if(WV.on)WV.tau+=dt*Q.slow;
+  const vp_=vPs(),vs_=vSs(),lp=lamP(),ls=lamS();
+  const AP=Math.min(Q.amp*0.08,0.8*lp/(2*Math.PI)),AS=Q.amp*0.12;
+  const u=coilX.map(x=>AP*disp(x,vp_,lp));
+  for(let i=0;i<NC;i++){coils[i].position.x=coilX[i]+u[i];
+    if(i!==MC){const a=u[Math.max(0,i-1)],b=u[Math.min(NC-1,i+1)],dx=LEN/(NC-1)*2,c=(a-b)/dx;const m=coils[i].material;
+      if(c>0)m.color.setRGB(0.79-0.45*Math.min(1,c*2.2),0.81-0.1*Math.min(1,c*2.2),0.83+0.15*Math.min(1,c*2.2));else m.color.setRGB(0.79+c*0.6,0.81+c*0.6,0.83+c*0.6)}}
+  ballP.position.set(coils[MC].position.x,YP+0.066,ZP);ballP.visible=Q.mark;coils[MC].material=Q.mark?ballP.material:coils[MC+1].material;restP.visible=restPtxt.visible=Q.mark;
+  paddle.position.set(X0-0.03+u[0],YP,ZP);
+  for(let i=0;i<NB;i++){const y=YS+AS*disp(beadX[i],vs_,ls);beads[i].position.y=y;ropePos[i*3]=beadX[i];ropePos[i*3+1]=y;ropePos[i*3+2]=ZS}
+  ropeGeo.attributes.position.needsUpdate=true;beads[MB].material=Q.mark?ballP.material:beadMat;beads[MB].scale.setScalar(Q.mark?1:0.55);
+  handle.position.set(X0-0.1,beads[0].position.y,ZS);
+  arrows.visible=Q.arrows;mP.visible=mS.visible=Q.arrows&&Q.mark;
+  // chegada nos sensores
+  if(WV.on){const fp=vp_*WV.tau,fs=vs_*WV.tau;
+    if(WV.arrP===null&&fp>=LEN)WV.arrP=LEN/vp_;if(WV.arrS===null&&fs>=LEN)WV.arrS=LEN/vs_;
+    if(!WV.cont&&fs>LEN+ls+0.4){WV.on=false}}
+  const glowP=WV.arrP!==null&&(WV.cont||WV.tau<WV.arrP+1/Q.freq+0.6),glowS=WV.arrS!==null&&(WV.cont||WV.tau<WV.arrS+1/Q.freq+0.6);
+  lampP.material.color.setHex(glowP?0x5cc4ee:WV.arrP!==null?0x24485a:0x333333);lampS.material.color.setHex(glowS?0xf0aa45:WV.arrS!==null?0x5a4220:0x333333);
+  // histórico da partícula marcada
+  WV.histP.push(AP?u[MC]/AP:0);WV.histS.push(AS?(beads[MB].position.y-YS)/AS:0);
+  if(WV.histP.length>360){WV.histP.shift();WV.histS.shift()}
+}
+function drawScreensWave(){
+  let {ctx:x,cv}=scr1;const w=cv.width,h=cv.height;
+  x.fillStyle="#07121a";x.fillRect(0,0,w,h);
+  x.fillStyle="#7fb8d0";x.font="600 18px JetBrains Mono,monospace";x.fillText("PARTÍCULA MARCADA × TEMPO",14,20);
+  const rows=[["P · mola: vai e volta",WV.histP,"#5cc4ee"],["S · corda: sobe e desce",WV.histS,"#f0aa45"]],rh=(h-40)/2;
+  rows.forEach(([lab,hs,c],r)=>{const cy=34+rh*r+rh/2;x.strokeStyle="rgba(255,255,255,.15)";x.setLineDash([6,6]);x.beginPath();x.moveTo(20,cy);x.lineTo(w-20,cy);x.stroke();x.setLineDash([]);
+    x.fillStyle="#6c7d86";x.font="13px JetBrains Mono,monospace";x.fillText("repouso",w-86,cy-5);
+    x.strokeStyle=c;x.lineWidth=2.5;x.beginPath();hs.forEach((v,i)=>{const px=20+i/359*(w-40),py=cy-v*rh*0.4;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.lineWidth=1;
+    x.fillStyle=c;x.font="600 15px JetBrains Mono,monospace";x.fillText(lab,20,cy-rh*0.36)});
+  scr1.tx.needsUpdate=true;
+  ({ctx:x,cv}=scr2);const w2=cv.width,h2=cv.height;
+  x.fillStyle="#140f07";x.fillRect(0,0,w2,h2);x.fillStyle="#f0b860";x.font="600 18px JetBrains Mono,monospace";x.fillText("CORRIDA ATÉ O SENSOR",14,20);
+  [["P",vPs(),WV.arrP,"#5cc4ee"],["S",vSs(),WV.arrS,"#f0aa45"]].forEach(([n,v,arr,c],i)=>{const y=70+i*70,bx=50,bw=w2-90;
+    x.fillStyle=c;x.font="900 26px Chivo,sans-serif";x.fillText(n,14,y+9);x.fillStyle="rgba(255,255,255,.07)";x.fillRect(bx,y-10,bw,20);
+    const f=WV.on||arr!==null?Math.min(1,v*WV.tau/LEN):0;x.fillStyle=c;x.fillRect(bx,y-10,bw*f,20);
+    x.fillStyle="#e9e4d8";x.font="600 17px JetBrains Mono,monospace";x.fillText(arr!==null?`chegou em ${fmt(arr)} s`:WV.on?"a caminho…":"—",bx,y+36)});
+  scr2.tx.needsUpdate=true;
+}
+function updateWaveHUD(){
+  const R=ROCKS[Q.rock];$("wVp").textContent=fmt(R.vp);$("wVs").textContent=fmt(R.vs);
+  $("wLp").textContent=fmt(R.vp/Q.freq)+" km";$("wLs").textContent=fmt(R.vs/Q.freq)+" km";
+  $("owA").textContent=Math.round(Q.amp*100)+"%";$("owF").textContent=fmt(Q.freq)+" Hz";$("owSl").textContent=fmt(Q.slow,2)+"×";$("owR").textContent=`Vp ${fmt(R.vp)} · Vs ${fmt(R.vs)} km/s`;
+  $("wA").value=Q.amp;$("wF").value=Q.freq;$("wSl").value=Q.slow;$("wRock").value=Q.rock;
+  let n;
+  if(!WV.on&&WV.arrP===null)n="Toque em <b>Gerar pulso</b> e acompanhe só a <b style='color:#ff6a5a'>bolinha vermelha</b> de cada experimento.";
+  else if(WV.arrP===null)n="Na mola, as espiras se apertam e se afastam <b>na mesma direção</b> em que a onda anda. Isso é a onda P: compressão e dilatação.";
+  else if(WV.arrS===null)n=`A onda P chegou ao sensor em ${fmt(WV.arrP)} s. A S ainda está no caminho: ela é mais lenta e sacode a corda <b>para os lados</b>.`;
+  else if(WV.cont)n=`Onda contínua: compare os comprimentos de onda. Com ${fmt(Q.freq)} Hz, a P tem λ = ${fmt(R.vp/Q.freq)} km e a S, ${fmt(R.vs/Q.freq)} km. Mesma frequência, velocidades diferentes.`;
+  else n=`A S chegou ${fmt(WV.arrS-WV.arrP)} s depois da P. E a bolinha vermelha? Voltou para o mesmo lugar. <b>A onda transporta energia, não matéria.</b>`;
+  $("note2").innerHTML=n;
+}
+function startWave(cont){WV.on=true;WV.cont=cont;WV.tau=0;WV.arrP=WV.arrS=null;$("wCont").classList.toggle("on",cont)}
+$("wPulse").onclick=()=>startWave(false);$("wCont").onclick=()=>startWave(true);
+$("wStop").onclick=()=>{WV.on=false;WV.cont=false;WV.arrP=WV.arrS=null;$("wCont").classList.remove("on")};
+const wbind=(id,key,num=true)=>$(id).addEventListener("input",e=>{Q[key]=num?parseFloat(e.target.value):e.target.value;syncScene();updateWaveHUD()});
+wbind("wA","amp");wbind("wF","freq");wbind("wSl","slow");wbind("wRock","rock",false);
+$("wArr").onchange=e=>Q.arrows=e.target.checked;$("wMark").onchange=e=>Q.mark=e.target.checked;
+
+// botões da bancada mudam de função conforme o experimento
+function labelTex(txt){return canvasTex(256,44,(c,w,h)=>{c.fillStyle="#9aa3a8";c.font="600 24px JetBrains Mono,monospace";c.textAlign="center";c.fillText(txt,w/2,30)})}
+knobs[0].modes={crust:{o:P,key:"mag",min:2,max:6.5,label:"ENERGIA"},wave:{o:Q,key:"amp",min:0.1,max:1,label:"AMPLITUDE"}};
+knobs[1].modes={crust:{o:P,key:"depth",min:2,max:27,label:"PROFUNDIDADE"},wave:{o:Q,key:"freq",min:0.4,max:2,label:"FREQUÊNCIA"}};
+const kc=k=>k.modes[MODE];
+
+/* ---------------- experimento 3: construções na mesa vibratória ---------------- */
+const B={mmi:6,freq:5,slow:0.35,type:"sem",soil:"rocha",wave:"S",xray:false,heat:false};
+const SIM={on:false,t:0,dur:10,hist:[[],[],[]],scale:1e-3};
+const MESA=0.97,EXS=5,G=9.81,ZETA=0.05;
+const TYPES={sem:{name:"sem amarração",lim:0.005},conf:{name:"vigas e pilares",lim:0.015},ref:{name:"reforçada",lim:0.035}};
+const MMI_PGA=[0,0,0,0.015,0.03,0.06,0.12,0.22,0.40,0.65];
+const ROMAN=["","I","II","III","IV","V","VI","VII","VIII","IX"];
+const pga=()=>{const i=Math.floor(B.mmi),f=B.mmi-i;return i>=9?MMI_PGA[9]:MMI_PGA[i]*(1-f)+MMI_PGA[i+1]*f};
+const soilF=()=>B.soil==="sed"?1.8:1;
+const buildLab=new THREE.Group();buildLab.visible=false;scene.add(buildLab);
+
+// mesa vibratória
+const mesaBase=new THREE.Mesh(new THREE.BoxGeometry(2.25,0.04,1.0),darkMetal);mesaBase.position.set(0,0.92,-0.05);mesaBase.receiveShadow=true;buildLab.add(mesaBase);
+[-0.35,0.25].forEach(z=>{const r=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.012,0.03),chrome);r.position.set(0,0.946,z);buildLab.add(r)});
+const platTex=canvasTex(512,256,(x,w,h)=>{x.fillStyle="#6b7178";x.fillRect(0,0,w,h);x.strokeStyle="#5a6066";x.lineWidth=2;for(let i=0;i<w;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i,h);x.stroke()}for(let j=0;j<h;j+=32){x.beginPath();x.moveTo(0,j);x.lineTo(w,j);x.stroke()}});
+const plat=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.03,0.9),new THREE.MeshStandardMaterial({map:platTex,roughness:0.5,metalness:0.5}));plat.castShadow=plat.receiveShadow=true;buildLab.add(plat);
+const motor=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.12,0.2),new THREE.MeshStandardMaterial({color:0x2d5a7a,roughness:0.4,metalness:0.5}));motor.position.set(1.2,1.0,-0.05);buildLab.add(motor);
+const fly=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.02,32),chrome);fly.rotation.x=Math.PI/2;fly.position.set(1.2,1.0,0.07);buildLab.add(fly);
+const flyMark=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.06,0.005),new THREE.MeshBasicMaterial({color:0xf0aa45}));flyMark.position.y=0.03;const flyG=new THREE.Group();flyG.position.set(1.2,1.0,0.082);flyG.add(flyMark);buildLab.add(flyG);
+const motorLab=textSprite("MOTOR","#9aa3a8",0.22);motorLab.position.set(1.2,1.12,-0.05);buildLab.add(motorLab);
+
+// aberturas (coordenadas normalizadas 0..1, y a partir do chão)
+const OPEN={
+  house:{front:[{x0:.42,x1:.58,y0:0,y1:.72,door:1},{x0:.1,x1:.3,y0:.35,y1:.75},{x0:.7,x1:.9,y0:.35,y1:.75}],side:[{x0:.35,x1:.65,y0:.35,y1:.75}],stories:[[0,1]]},
+  sob:{front:[{x0:.42,x1:.58,y0:0,y1:.36,door:1},{x0:.1,x1:.3,y0:.18,y1:.38},{x0:.7,x1:.9,y0:.18,y1:.38},{x0:.1,x1:.3,y0:.68,y1:.88},{x0:.42,x1:.58,y0:.68,y1:.88},{x0:.7,x1:.9,y0:.68,y1:.88}],
+       side:[{x0:.35,x1:.65,y0:.18,y1:.38},{x0:.35,x1:.65,y0:.68,y1:.88}],stories:[[0,.5],[.5,1]]}};
+function jag(ax,ay,bx,by,n=9,amp=.012){const pts=[];for(let i=0;i<=n;i++){const f=i/n,j=i&&i<n?(Math.random()-.5)*amp*2:0;pts.push([ax+(bx-ax)*f+j,ay+(by-ay)*f+j*0.6])}return pts}
+function makeCracks(lay){const out=[];const st=y=>lay.stories.findIndex(([a,b])=>y>=a&&y<b+1e-6);
+  const add=(pts,thr,y)=>out.push({pts,thr,s:Math.max(0,st(y))});
+  lay.openings.forEach(o=>{const L=.07+Math.random()*.05;
+    add(jag(o.x1,o.y1,o.x1+L,o.y1+L*1.3,5),.12,o.y1-.01);add(jag(o.x0,o.y1,o.x0-L,o.y1+L*1.3,5),.14,o.y1-.01);
+    if(!o.door){add(jag(o.x1,o.y0,o.x1+L,o.y0-L*1.2,5),.2,o.y0+.01);add(jag(o.x0,o.y0,o.x0-L,o.y0-L*1.2,5),.22,o.y0+.01)}});
+  lay.stories.forEach(([a,b])=>{const xs=[0,...lay.openings.filter(o=>o.y0<b&&o.y1>a).flatMap(o=>[o.x0,o.x1]).sort((p,q)=>p-q),1];
+    for(let i=0;i<xs.length-1;i+=2){const xa=xs[i]+.01,xb=xs[i+1]-.01;if(xb-xa<.04)continue;
+      add(jag(xa,a+.02,xb,b-.02,10,.015),.35,a+.01);add(jag(xb,a+.02,xa,b-.02,10,.015),.42,a+.01)}
+    add(jag(0.02,b-.03,.98,b-.035,18,.01),.62,b-.04);add(jag(0.05,a+.04,.95,b-.08,14,.02),.7,a+.02)});
+  return out}
+function heatColor(D){const stops=[[0.36,0.74,0.4],[0.95,0.85,0.3],[0.95,0.55,0.2],[0.85,0.22,0.18]];const f=Math.min(0.999,D)*3,i=Math.floor(f),t=f-i;const a=stops[i],b=stops[i+1];return `rgb(${(a[0]+(b[0]-a[0])*t)*255|0},${(a[1]+(b[1]-a[1])*t)*255|0},${(a[2]+(b[2]-a[2])*t)*255|0})`}
+
+function makeBuilding(kind,cx,W,Dp,H){
+  const bd={kind,cx,W,Dp,H,defs:[],frame:new THREE.Group(),g:new THREE.Group(),stories:kind==="house"?1:2};
+  bd.g.position.set(cx,MESA,-0.05);buildLab.add(bd.g);bd.g.add(bd.frame);
+  const lay=OPEN[kind];
+  bd.face={front:{cv:document.createElement("canvas"),open:lay.front,cr:null,w:W,h:H},side:{cv:document.createElement("canvas"),open:lay.side,cr:null,w:Dp,h:H}};
+  Object.values(bd.face).forEach(f=>{f.cv.width=512;f.cv.height=Math.round(512*f.h/f.w);f.tx=new THREE.CanvasTexture(f.cv);f.tx.encoding=THREE.sRGBEncoding;f.tx.anisotropy=4;
+    f.cr=makeCracks({openings:f.open,stories:lay.stories})});
+  const mk=map=>new THREE.MeshStandardMaterial({map,color:0xb8b8b8,roughness:0.9,transparent:true,opacity:1});
+  const plain=new THREE.MeshStandardMaterial({color:kind==="house"?0xa89f8e:0x9aa1a4,roughness:0.9,transparent:true});
+  bd.wallMats=[mk(bd.face.side.tx),mk(bd.face.side.tx),plain,plain,mk(bd.face.front.tx),mk(bd.face.front.tx)];
+  addDef(bd,new THREE.BoxGeometry(W,H,Dp,6,kind==="house"?8:16,1).translate(0,H/2,0),bd.wallMats,bd.g);
+  const concrete=new THREE.MeshStandardMaterial({color:0xa9a49a,roughness:0.8});
+  if(kind==="house"){
+    const sY=0.0933,sZ=(Dp/2+0.05)/0.866,rg=new THREE.CylinderGeometry(1,1,1,3,1);rg.rotateZ(Math.PI/2);rg.rotateX(-Math.PI/2);rg.scale(W+0.08,sY,sZ);rg.translate(0,H+0.5*sY,0);
+    const roofTex=canvasTex(256,256,(x,w,h)=>{x.fillStyle="#a8502e";x.fillRect(0,0,w,h);x.fillStyle="#8e3f22";for(let i=0;i<h;i+=16)x.fillRect(0,i,w,4);for(let i=0;i<w;i+=22){x.fillStyle="rgba(0,0,0,.12)";x.fillRect(i,0,2,h)}});
+    addDef(bd,rg,new THREE.MeshStandardMaterial({map:roofTex,roughness:0.7,flatShading:true}),bd.g);
+    addDef(bd,new THREE.BoxGeometry(W+0.02,0.012,Dp+0.02).translate(0,H+0.006,0),concrete,bd.g);
+  }else{
+    [H/2,H].forEach(y=>addDef(bd,new THREE.BoxGeometry(W+0.04,0.016,Dp+0.04).translate(0,y+0.008,0),concrete,bd.g));
+    addDef(bd,new THREE.BoxGeometry(W+0.04,0.035,0.01).translate(0,H+0.03,Dp/2+0.015),concrete,bd.g);
+    addDef(bd,new THREE.BoxGeometry(W+0.04,0.035,0.01).translate(0,H+0.03,-Dp/2-0.015),concrete,bd.g);
+    // marquise
+    addDef(bd,new THREE.BoxGeometry(0.16,0.01,0.08).translate(0,H*0.2+0.01,Dp/2+0.04),concrete,bd.g);
+  }
+  // estrutura (raio-x)
+  const fm=new THREE.MeshStandardMaterial({color:0x8a8f96,roughness:0.6,metalness:0.2}),rebar=new THREE.MeshBasicMaterial({color:0xd4552f});
+  bd.frameParts={conf:[],ref:[]};
+  const pil=(x,z,set)=>{const m=addDef(bd,new THREE.BoxGeometry(0.03,H,0.03,1,16,1).translate(x,H/2,z),fm,bd.frame);set.push(m)};
+  const beam=(y,set)=>{[[W,0.03,0,Dp/2-0.02],[W,0.03,0,-Dp/2+0.02]].forEach(([l,t,x,z])=>set.push(addDef(bd,new THREE.BoxGeometry(l-0.02,0.03,t).translate(x,y-0.015,z),fm,bd.frame)));
+    [[Dp,W/2-0.02],[Dp,-W/2+0.02]].forEach(([l,x])=>set.push(addDef(bd,new THREE.BoxGeometry(0.03,0.03,l-0.02).translate(x,y-0.015,0),fm,bd.frame)))};
+  const corners=[[W/2-0.02,Dp/2-0.02],[-W/2+0.02,Dp/2-0.02],[W/2-0.02,-Dp/2+0.02],[-W/2+0.02,-Dp/2+0.02]];
+  ["conf","ref"].forEach(set=>{corners.forEach(([x,z])=>pil(x,z,bd.frameParts[set]));beam(0.04,bd.frameParts[set]);
+    for(let s=1;s<=bd.stories;s++)beam(H*s/bd.stories,bd.frameParts[set])});
+  [[0,Dp/2-0.02],[0,-Dp/2+0.02],[W/2-0.02,0],[-W/2+0.02,0]].forEach(([x,z])=>pil(x,z,bd.frameParts.ref));
+  for(let s=0;s<bd.stories;s++){const y0=H*s/bd.stories,h=H/bd.stories;
+    [-1,1].forEach(sg=>{const len=Math.hypot(W/2-0.04,h);const g=new THREE.BoxGeometry(0.01,len,0.01,1,8,1);g.rotateZ(sg*Math.atan2(W/2-0.04,h));g.translate(sg*(W/4-0.02),y0+h/2,-Dp/2+0.02);bd.frameParts.ref.push(addDef(bd,g,rebar,bd.frame))})}
+  const note=textSprite("sem pilares nem vigas","#ff8a6a",0.42);note.position.set(0,H*0.55,Dp/2+0.06);bd.frame.add(note);bd.noFrame=note;
+  const lab=textSprite(kind==="house"?"CASA TÉRREA · f₀ ≈ 8 Hz":"SOBRADO · f₀ ≈ 4 Hz",kind==="house"?"#f2d59a":"#9fd0ea",0.62);lab.position.set(cx,MESA+(kind==="house"?0.62:0.82),-0.05);buildLab.add(lab);
+  return bd;
+}
+function addDef(bd,geo,mat,parent){const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.receiveShadow=true;m.userData.base=Float32Array.from(geo.attributes.position.array);parent.add(m);bd.defs.push(m);return m}
+const house=makeBuilding("house",-0.5,0.6,0.5,0.3);
+const sob=makeBuilding("sob",0.48,0.55,0.45,0.6);
+const BLD=[house,sob];
+
+function resetBuild(){
+  house.u=house.v=0;house.maxDr=0;house.D=0;house.c=0;house.coll=false;
+  sob.u1=sob.v1=sob.u2=sob.v2=0;sob.maxDr1=sob.maxDr2=0;sob.D1=sob.D2=0;sob.D=0;sob.c=0;sob.coll=0;
+  BLD.forEach(b=>{b.drawKey="";Object.values(b.face).forEach(f=>f.cr=makeCracks({openings:f.open,stories:OPEN[b.kind].stories}))});
+  debris.forEach(d=>buildLab.remove(d.m));debris.length=0;
+  SIM.on=false;SIM.t=0;SIM.hist=[[],[],[]];SIM.scale=1e-3;$("bShake").textContent="▶ Tremer";
+}
+const debris=[];
+function spawnDebris(bd,n,yMin,yMax,colors){
+  for(let i=0;i<n;i++){const s=0.012+Math.random()*0.025;const m=new THREE.Mesh(new THREE.BoxGeometry(s,s*0.7,s*1.2),new THREE.MeshStandardMaterial({color:colors[i%colors.length],roughness:0.9}));
+    const side=Math.random()<.5?-1:1;m.position.set(bd.g.position.x+(Math.random()-.5)*bd.W,MESA+yMin+Math.random()*(yMax-yMin),bd.g.position.z+side*(bd.Dp/2)*Math.random());m.castShadow=true;buildLab.add(m);
+    debris.push({m,v:new THREE.Vector3((Math.random()-.5)*0.6,Math.random()*0.4,side*(0.2+Math.random()*0.5)),w:new THREE.Vector3(Math.random()*8,Math.random()*8,Math.random()*8),rest:false})}}
+
+// deformação: cisalhamento por andar + colapso
+function deformHouse(y){const H=house.H,u=house.u*EXS,c=house.c;const f=Math.min(1,Math.max(0,y/H));
+  return [u*f+c*0.1*f, y<=H?y*(1-0.6*c):y-H*0.6*c]}
+function deformSob(y){const H=sob.H,h=H/2,u1=sob.u1*EXS,u2=sob.u2*EXS,c=sob.c,s=sob.coll;
+  let dx=y<=h?u1*Math.max(0,y)/h:y<=H?u1+(u2-u1)*(y-h)/h:u2;let yy=y;
+  if(s===1){dx+=c*0.12*Math.min(1,y/h);yy=y<=h?y*(1-0.78*c):y-h*0.78*c}
+  if(s===2){if(y>h){dx+=c*0.1*Math.min(1,(y-h)/h);yy=y<=H?h+(y-h)*(1-0.7*c):y-h*0.7*c}}
+  return [dx,yy]}
+function applyDeform(bd,fn){bd.defs.forEach(m=>{const p=m.geometry.attributes.position,a=p.array,b=m.userData.base;
+  for(let i=0;i<a.length;i+=3){const r=fn(b[i+1]);a[i]=b[i]+r[0];a[i+1]=r[1];a[i+2]=b[i+2]}p.needsUpdate=true;m.geometry.computeBoundingSphere()})}
+
+function drawFace(bd,f,Ds,base){
+  const x=f.cv.getContext("2d"),w=f.cv.width,h=f.cv.height;let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  x.fillStyle=B.heat?heatColor(Math.max(...Ds)):base;x.fillRect(0,0,w,h);
+  if(!B.heat){x.fillStyle="rgba(0,0,0,.035)";for(let i=0;i<260;i++)x.fillRect(rnd()*w,rnd()*h,3,3)}
+  x.fillStyle="rgba(0,0,0,.18)";x.fillRect(0,h-10,w,10);
+  if(bd.kind==="sob"){x.fillStyle="rgba(0,0,0,.12)";x.fillRect(0,h/2-4,w,6)}
+  f.open.forEach(o=>{const X=o.x0*w,Y=(1-o.y1)*h,Wd=(o.x1-o.x0)*w,Hd=(o.y1-o.y0)*h;
+    x.fillStyle="#f4f1ea";x.fillRect(X-5,Y-5,Wd+10,Hd+(o.door?5:10));
+    x.fillStyle=o.door?"#6b4428":"#35505e";x.fillRect(X,Y,Wd,Hd);
+    if(!o.door){x.fillStyle="rgba(180,220,240,.35)";x.fillRect(X+4,Y+4,Wd/2-6,Hd-8);x.fillStyle="#f4f1ea";x.fillRect(X+Wd/2-2,Y,4,Hd)}
+    else{x.fillStyle="#caa24a";x.beginPath();x.arc(X+Wd*0.8,Y+Hd*0.55,4,0,7);x.fill()}});
+  f.cr.forEach(c=>{const D=Ds[Math.min(c.s,Ds.length-1)],p=Math.max(0,Math.min(1,(D-c.thr)/0.22));if(p<=0)return;
+    const n=Math.max(2,Math.ceil(c.pts.length*p));x.strokeStyle="#2a1c15";x.lineCap="round";x.lineJoin="round";x.lineWidth=1.2+p*3.2*(c.thr>0.3?1.4:1);
+    x.beginPath();c.pts.slice(0,n).forEach(([px,py],i)=>{const X=px*w,Y=(1-py)*h;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke();
+    if(c.thr>0.6&&p>0.5){x.fillStyle="rgba(150,70,45,.55)";const [px,py]=c.pts[Math.floor(c.pts.length/2)];x.beginPath();x.ellipse(px*w,(1-py)*h,14*p,8*p,0.3,0,7);x.fill()}});
+  f.tx.needsUpdate=true;
+}
+function redrawBuilding(bd){const Ds=bd.kind==="house"?[house.D]:[sob.D1,sob.D2];
+  const key=Ds.map(d=>Math.round(d*60)).join(",")+B.heat;if(key===bd.drawKey)return;bd.drawKey=key;
+  const base=bd.kind==="house"?"#e8dcc2":"#cfd7da";drawFace(bd,bd.face.front,Ds,base);drawFace(bd,bd.face.side,Ds,base)}
+
+function stateLabel(D,coll){return coll?"colapso":D<0.12?"intacta":D<0.35?"fissuras":D<0.62?"rachaduras":"dano grave"}
+function applyXray(){BLD.forEach(bd=>{bd.wallMats.forEach(m=>{m.opacity=B.xray?0.22:1;m.depthWrite=!B.xray});
+  bd.frame.visible=B.xray;bd.frameParts.conf.forEach(m=>m.visible=B.type==="conf");bd.frameParts.ref.forEach(m=>m.visible=B.type==="ref");bd.noFrame.visible=B.type==="sem"})}
+
+function buildUpdate(dtReal){
+  const dt=dtReal*B.slow,lim=TYPES[B.type].lim;
+  const A=pga()*G*soilF(),w=2*Math.PI*B.freq,latF=B.wave==="S"?1:0.12;
+  let ag=0,env=0;
+  if(SIM.on){const n=Math.max(1,Math.ceil(dt/0.0005)),h=dt/n;
+    const wh=2*Math.PI*8,K=Math.pow(2*Math.PI*4,2)/0.382,C=2*ZETA/(2*Math.PI*4)*K;
+    for(let i=0;i<n;i++){SIM.t+=h;const t=SIM.t;env=t<1.5?t/1.5:t<SIM.dur-2.5?1:Math.max(0,(SIM.dur-t)/2.5);
+      ag=latF*A*env*Math.sin(w*t);
+      if(!house.coll){const a=-ag-2*ZETA*wh*house.v-wh*wh*house.u;house.v+=a*h;house.u+=house.v*h}
+      else{house.u*=0.999}
+      if(!sob.coll){const d21=sob.u2-sob.u1,v21=sob.v2-sob.v1;
+        const a1=-ag-K*sob.u1+K*d21-C*sob.v1+C*v21,a2=-ag-K*d21-C*v21;sob.v1+=a1*h;sob.v2+=a2*h;sob.u1+=sob.v1*h;sob.u2+=sob.v2*h}
+      else{sob.u1*=0.999;sob.u2*=0.999}}
+    if(SIM.t>=SIM.dur){SIM.on=false;$("bShake").textContent="▶ Tremer de novo"}
+    SIM.env=env;
+    // dano
+    const dh=Math.abs(house.u)/3;house.maxDr=Math.max(house.maxDr,dh);house.D=Math.min(1,house.maxDr/lim);
+    const d1=Math.abs(sob.u1)/3,d2=Math.abs(sob.u2-sob.u1)/3;sob.maxDr1=Math.max(sob.maxDr1,d1);sob.maxDr2=Math.max(sob.maxDr2,d2);
+    sob.D1=Math.min(1,sob.maxDr1/lim);sob.D2=Math.min(1,sob.maxDr2/lim);sob.D=Math.max(sob.D1,sob.D2);
+    if(!house.coll&&house.D>=1){house.coll=true;spawnDebris(house,28,0.25,0.42,[0xa8502e,0x8e3f22,0xe8dcc2,0xb0664a])}
+    if(!sob.coll&&sob.D>=1){sob.coll=sob.D1>=sob.D2?1:2;spawnDebris(sob,34,sob.coll===1?0.05:0.32,sob.coll===1?0.32:0.6,[0xcfd7da,0xa9a49a,0xb0664a,0x8a8f96])}
+  }
+  if(house.coll)house.c=Math.min(1,house.c+dtReal*0.9);if(sob.coll)sob.c=Math.min(1,sob.c+dtReal*0.9);
+  // chão
+  const agNow=SIM.on?latF*A*(SIM.env||0)*Math.sin(w*SIM.t):0;
+  const xg=B.wave==="S"?Math.max(-0.2,Math.min(0.2,-agNow/(w*w)*EXS)):0;
+  const yg=B.wave==="P"&&SIM.on?Math.max(-0.05,Math.min(0.05,-(A*(SIM.env||0)*Math.sin(w*SIM.t))/(w*w)*EXS)):0;
+  plat.position.set(xg,0.955+yg,-0.05);BLD.forEach(b=>{b.g.position.x=b.cx+xg;b.g.position.y=MESA+yg});
+  flyG.rotation.z-=SIM.on?dt*w:0;
+  applyDeform(house,deformHouse);applyDeform(sob,deformSob);
+  BLD.forEach(redrawBuilding);
+  // entulho
+  debris.forEach(d=>{if(d.rest)return;const s=Math.min(0.05,dtReal)*Math.max(0.3,B.slow*1.5);d.v.y-=3.2*s;d.m.position.addScaledVector(d.v,s);d.m.rotation.x+=d.w.x*s;d.m.rotation.y+=d.w.y*s;
+    const floorY=Math.abs(d.m.position.z+0.05)<0.45&&Math.abs(d.m.position.x)<1?MESA+0.01:0.91;
+    if(d.m.position.y<floorY){d.m.position.y=floorY;d.v.y*=-0.25;d.v.x*=0.5;d.v.z*=0.5;d.w.multiplyScalar(0.5);if(Math.abs(d.v.y)<0.05)d.rest=true}});
+  // histórico
+  if(SIM.on){SIM.hist[0].push(xg);SIM.hist[1].push(xg+house.u*EXS);SIM.hist[2].push(xg+sob.u2*EXS);
+    SIM.scale=Math.max(SIM.scale*0.999,Math.abs(xg),Math.abs(house.u*EXS),Math.abs(sob.u2*EXS),0.004);
+    SIM.hist.forEach(a=>{if(a.length>360)a.shift()})}
+}
+function drawScreensBuild(){
+  let {ctx:x,cv}=scr1;const w=cv.width,h=cv.height;x.fillStyle="#07121a";x.fillRect(0,0,w,h);
+  x.fillStyle="#7fb8d0";x.font="600 18px JetBrains Mono,monospace";x.fillText("MOVIMENTO × TEMPO",14,20);
+  const rows=[["chão (mesa)","#9aa3a8"],["topo da casa","#f2d59a"],["topo do sobrado","#9fd0ea"]],rh=(h-36)/3;
+  rows.forEach(([lab,c],r)=>{const cy=32+rh*r+rh/2;x.strokeStyle="rgba(255,255,255,.1)";x.beginPath();x.moveTo(20,cy);x.lineTo(w-20,cy);x.stroke();
+    x.strokeStyle=c;x.lineWidth=2.2;x.beginPath();SIM.hist[r].forEach((v,i)=>{const px=20+i/359*(w-40),py=cy-v/SIM.scale*rh*0.45;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.lineWidth=1;
+    x.fillStyle=c;x.font="600 14px JetBrains Mono,monospace";x.fillText(lab,20,cy-rh*0.3)});
+  scr1.tx.needsUpdate=true;
+  ({ctx:x,cv}=scr2);const w2=cv.width,h2=cv.height;x.fillStyle="#140f07";x.fillRect(0,0,w2,h2);
+  x.fillStyle="#f0b860";x.font="600 18px JetBrains Mono,monospace";x.fillText("DANO ACUMULADO",14,20);x.textAlign="right";x.fillText("tremor: "+fmt(B.freq)+" Hz",w2-14,20);x.textAlign="left";
+  [["CASA",house.D,house.coll,8],["SOBRADO",sob.D,!!sob.coll,4]].forEach(([n,D,coll,fn],i)=>{const y=70+i*78,bx=150,bw=w2-170;
+    x.fillStyle="#e9e4d8";x.font="900 22px Chivo,sans-serif";x.fillText(n,14,y+8);
+    x.fillStyle="rgba(255,255,255,.07)";x.fillRect(bx,y-11,bw,22);x.fillStyle=heatColor(D);x.fillRect(bx,y-11,bw*D,22);
+    x.font="600 16px JetBrains Mono,monospace";x.fillStyle="#cfc6b2";x.fillText(`f₀ ${fn} Hz · ${stateLabel(D,coll)}`,bx,y+34);
+    if(Math.abs(B.freq-fn)/fn<0.15&&SIM.on&&Math.floor(performance.now()/350)%2){x.fillStyle="#ff6a4a";x.textAlign="right";x.fillText("RESSONÂNCIA",w2-20,y+34);x.textAlign="left"}});
+  scr2.tx.needsUpdate=true;
+}
+function updateBuildHUD(){
+  const g=pga()*soilF();$("bMMI").textContent=ROMAN[Math.round(B.mmi)];$("bPGA").textContent=fmt(g,2)+" g";$("bF").textContent=fmt(B.freq)+" Hz";$("bSo").textContent=B.soil==="sed"?"sedim.":"rocha";
+  $("obI").textContent=ROMAN[Math.round(B.mmi)]+" · "+fmt(pga(),2)+" g";$("obF").textContent=fmt(B.freq)+" Hz";$("obSl").textContent=fmt(B.slow,2)+"×";
+  $("bI").value=B.mmi;$("bFr").value=B.freq;$("bSl").value=B.slow;$("bType").value=B.type;$("bSoil").value=B.soil;
+  $("tb3").innerHTML=[["Casa","8 Hz",house.maxDr,house.D,house.coll],["Sobrado","4 Hz",Math.max(sob.maxDr1,sob.maxDr2),sob.D,!!sob.coll]].map(([n,f,dr,D,c])=>
+    `<tr><td>${n}</td><td>${f}</td><td>${fmt(dr*300,1)} cm</td><td style="color:${heatColor(D)}">${stateLabel(D,c)}</td></tr>`).join("");
+  const resH=Math.abs(B.freq-8)/8<0.15,resS=Math.abs(B.freq-4)/4<0.15;let n;
+  if(house.coll||sob.coll)n=`<b>Colapso:</b> o deslocamento entre ${sob.coll?"os andares do sobrado":"o chão e o telhado da casa"} passou do limite da alvenaria ${TYPES[B.type].name}. Troque para <b>vigas e pilares</b> e repita o mesmo tremor.`;
+  else if(SIM.on&&B.wave==="P")n="Onda <b>P</b>: o chão sobe e desce. As paredes aguentam bem esforço vertical (é o mesmo sentido do peso), por isso quase não racham.";
+  else if(SIM.on&&(resH||resS))n=`<b>Ressonância!</b> O tremor de ${fmt(B.freq)} Hz tem o mesmo ritmo ${resH?"da casa (8 Hz)":"do sobrado (4 Hz)"}. A cada ida e volta o balanço aumenta, como empurrar um balanço de parquinho na hora certa.`;
+  else if(house.D>0.35||sob.D>0.35)n="Rachaduras em <b>X</b>: sinal de esforço lateral (cisalhamento). Elas nascem nos cantos de portas e janelas, onde a parede é mais fraca.";
+  else if(SIM.on)n="O chão anda para os lados e o topo <b>atrasa</b> por inércia. A diferença entre base e topo entorta as paredes.";
+  else if(SIM.t>0)n=`Fim do tremor. Maior deslocamento entre andares: casa ${fmt(house.maxDr*300,1)} cm, sobrado ${fmt(Math.max(sob.maxDr1,sob.maxDr2)*300,1)} cm. Mude a frequência e compare.`;
+  else n="Escolha intensidade e frequência e toque em <b>Tremer</b>. Compare a casa (rígida, vibra rápido) com o sobrado (mais alto, vibra devagar).";
+  $("note3").innerHTML=n;
+}
+function shake(){resetBuild();SIM.on=true;$("bShake").textContent="⏸ Tremendo…"}
+$("bShake").onclick=()=>{if(SIM.on){SIM.on=false;$("bShake").textContent="▶ Tremer";return}shake()};
+$("bReset").onclick=()=>{resetBuild();updateBuildHUD()};
+const bbind=(id,key,num=true,cb)=>$(id).addEventListener("input",e=>{B[key]=num?parseFloat(e.target.value):e.target.value;if(cb)cb();syncScene();updateBuildHUD()});
+bbind("bI","mmi");bbind("bFr","freq");bbind("bSl","slow");bbind("bType","type",false,()=>{resetBuild();applyXray()});bbind("bSoil","soil",false);
+document.querySelectorAll("#bWave button").forEach(b=>b.onclick=()=>{B.wave=b.dataset.w;document.querySelectorAll("#bWave button").forEach(x=>x.classList.toggle("on",x===b));updateBuildHUD()});
+$("bX").onchange=e=>{B.xray=e.target.checked;applyXray()};$("bH").onchange=e=>{B.heat=e.target.checked;BLD.forEach(b=>b.drawKey="")};
+const BPRE={jc:{mmi:7.5,freq:7.5,type:"sem",soil:"rocha"},rc:{mmi:6.5,freq:8,type:"sem",soil:"rocha"},rs:{mmi:6,freq:4,type:"sem",soil:"rocha"},vp:{mmi:7.5,freq:7.5,type:"conf",soil:"rocha"}};
+document.querySelectorAll("#bPresets button").forEach(b=>b.onclick=()=>{Object.assign(B,BPRE[b.dataset.p]);B.wave="S";
+  document.querySelectorAll("#bWave button").forEach(x=>x.classList.toggle("on",x.dataset.w==="S"));resetBuild();applyXray();syncScene();shake();updateBuildHUD();
+  if(b.dataset.p==="jc")setTimeout(()=>{$("note3").innerHTML="<b>João Câmara, 30/11/1986:</b> magnitude 5,1, o maior sismo registrado no RN. A sequência de tremores daquele ano danificou ou destruiu cerca de 4 mil casas, muitas de alvenaria sem amarração. Na reconstrução, 500 casas seguiram normas antissísmicas."},50)});
+knobs[0].modes.build={o:B,key:"mmi",min:3,max:9,label:"INTENSIDADE"};
+knobs[1].modes.build={o:B,key:"freq",min:1,max:12,label:"FREQUÊNCIA"};
+resetBuild();applyXray();
+
+const HUDS={crust:()=>updateHUD(),wave:()=>updateWaveHUD(),build:()=>updateBuildHUD()};
+function setMode(m){MODE=m;crust.visible=m==="crust";waveLab.visible=m==="wave";buildLab.visible=m==="build";
+  $("info").hidden=$("ctrl").hidden=m!=="crust";$("info2").hidden=$("ctrl2").hidden=m!=="wave";$("info3").hidden=$("ctrl3").hidden=m!=="build";
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  knobs.forEach(k=>{k.lab.material.map=labelTex(kc(k).label);k.lab.material.needsUpdate=true});
+  syncScene();HUDS[m]();
+  if(m==="crust")goView("lab");
+  else if(m==="wave"){goView("wave");if(!WV.on&&WV.arrP===null)setTimeout(()=>{if(MODE==="wave"&&!WV.on)startWave(false)},900)}
+  else goView("build");
+  try{history.replaceState(null,"",{wave:"#mola",build:"#construcoes"}[m]||"#")}catch(e){}}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+
+/* ---------------- pós-processamento ---------------- */
+let composer=null,bloom=null,HQ=false;
+function setupComposer(){
+  if(!THREE.EffectComposer||!THREE.UnrealBloomPass){composer=null;return}
+  composer=new THREE.EffectComposer(renderer);composer.addPass(new THREE.RenderPass(scene,camera));
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.6,0.45,0.92);composer.addPass(bloom);
+}
+function setQuality(hq){HQ=hq;renderer.setPixelRatio(hq?Math.min(devicePixelRatio,2):Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=hq;
+  [bench,top,plinth].forEach(m=>{m.material.needsUpdate=true});if(hq&&!composer)setupComposer();resize()}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?60:42;camera.updateProjectionMatrix();if(composer){composer.setSize(w,h)}}
+addEventListener("resize",resize);
+
+/* ---------------- física ---------------- */
+function envelope(xi,lam){return xi>0?Math.exp(-(xi/1.2)*(xi/1.2)):Math.exp(-(xi/(1.6*lam))*(xi/(1.6*lam)))}
+function trace(s,tt){const r=hyp(s),tp=r/vp(),ts=r/vs(),A=ampF()*14/(r+6);let v=0;
+  if(tt>tp){const a=tt-tp;v+=0.45*A*Math.exp(-a/1.4)*Math.sin(2*Math.PI*1.6*a)}
+  if(tt>ts){const a=tt-ts;v+=1.1*A*Math.exp(-a/2.6)*Math.sin(2*Math.PI*0.9*a+0.8*Math.sin(a*2.3))}
+  return v}
+function noise(k){const x=Math.sin(k*12.9898)*43758.5453;return x-Math.floor(x)-0.5}
+
+/* ---------------- telas da bancada ---------------- */
+function drawScreens(){
+  let {ctx:x,cv}=scr1;const w=cv.width,h=cv.height;
+  x.fillStyle="#07121a";x.fillRect(0,0,w,h);
+  x.strokeStyle="rgba(92,196,238,.12)";x.lineWidth=1;for(let s=0;s<=TMAX;s+=5){const px=40+s/TMAX*(w-60);x.beginPath();x.moveTo(px,26);x.lineTo(px,h-18);x.stroke()}
+  x.fillStyle="#7fb8d0";x.font="600 18px JetBrains Mono,monospace";x.fillText("SISMOGRAMAS",14,20);x.textAlign="right";x.fillText("t = "+fmt(t)+" s",w-14,20);x.textAlign="left";
+  const rowH=(h-50)/3;
+  stations.forEach((s,i)=>{const cy=34+rowH*i+rowH/2;x.fillStyle=s.css;x.font="900 20px Chivo,sans-serif";x.fillText(s.n,12,cy+7);
+    x.strokeStyle="rgba(255,255,255,.08)";x.beginPath();x.moveTo(40,cy);x.lineTo(w-20,cy);x.stroke();
+    x.strokeStyle=s.css;x.lineWidth=2;x.beginPath();const n=Math.floor(t*25);
+    for(let k=0;k<=n;k++){const tt=k/25,px=40+tt/TMAX*(w-60),v=trace(s,tt)+noise(k+i*999)*0.03;const py=cy-Math.max(-1,Math.min(1,v))*rowH*0.46;k?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();x.lineWidth=1;
+    const r=hyp(s),tp=r/vp(),ts=r/vs();
+    [[tp,"#5cc4ee","P"],[ts,"#f0aa45","S"]].forEach(([v,c,l])=>{if(t>=v){const px=40+v/TMAX*(w-60);x.strokeStyle=c;x.beginPath();x.moveTo(px,cy-rowH*0.48);x.lineTo(px,cy+rowH*0.48);x.stroke();x.fillStyle=c;x.font="600 15px JetBrains Mono,monospace";x.fillText(l,px+3,cy-rowH*0.3)}});
+  });
+  x.fillStyle="#4d7486";x.font="13px JetBrains Mono,monospace";for(let s=0;s<=TMAX;s+=10)x.fillText(s+"s",40+s/TMAX*(w-60)+2,h-4);
+  scr1.tx.needsUpdate=true;
+
+  ({ctx:x,cv}=scr2);const w2=cv.width,h2=cv.height;
+  x.fillStyle="#140f07";x.fillRect(0,0,w2,h2);
+  x.fillStyle="#f0b860";x.font="600 18px JetBrains Mono,monospace";x.fillText("Δt (S−P) → DISTÂNCIA",14,20);
+  const k=vp()*vs()/(vp()-vs());x.textAlign="right";x.fillText("d = Δt × "+fmt(k)+" km",w2-14,20);x.textAlign="left";
+  stations.forEach((s,i)=>{const y=58+i*((h2-70)/3),r=hyp(s),tp=r/vp(),ts=r/vs(),dt=ts-tp;
+    x.fillStyle=s.css;x.font="900 22px Chivo,sans-serif";x.fillText(s.n,14,y+8);
+    const bx=50,bw=w2-270,sc=bw/20;x.fillStyle="rgba(255,255,255,.06)";x.fillRect(bx,y-8,bw,16);
+    if(t>=tp){const cur=Math.min(t,ts)-tp;x.fillStyle=t>=ts?"#f0aa45":"rgba(240,170,69,.5)";x.fillRect(bx,y-8,Math.min(bw,cur*sc),16)}
+    x.font="600 19px JetBrains Mono,monospace";x.fillStyle=t>=ts?"#ffe2b0":"#6e5a3c";
+    x.fillText(t>=ts?`${fmt(dt)} s → ${fmt(dt*k,0)} km`:t>=tp?"esperando S…":"—",w2-205,y+7)});
+  scr2.tx.needsUpdate=true;
+}
+
+/* ---------------- HUD ---------------- */
+function updateHUD(){
+  $("sD").textContent=fmt(P.depth,1)+" km";$("sP").textContent=fmt(vp());$("sS").textContent=fmt(vs());$("sM").textContent=fmt(P.mag);
+  $("oM").textContent="M "+fmt(P.mag);$("oD").textContent=fmt(P.depth)+" km";$("oX").textContent=P.ex+" km";$("oZ").textContent=P.ez+" km";
+  $("oR").textContent=`Vp ${fmt(vp())} · Vs ${fmt(vs())} km/s`;$("oV").textContent=fmt(P.speed)+"×";
+  const k=vp()*vs()/(vp()-vs());
+  $("tb").innerHTML=stations.map(s=>{const r=hyp(s),tp=r/vp(),ts=r/vs();const sp=t>=tp,ss=t>=ts;
+    return `<tr><td style="color:${s.css};font-weight:600">${s.n}</td><td>${sp?fmt(tp)+"s":"—"}</td><td>${ss?fmt(ts)+"s":"—"}</td><td>${ss?fmt(ts-tp)+"s":"—"}</td><td>${ss?fmt((ts-tp)*k,0)+" km":"—"}</td></tr>`}).join("");
+  $("note").innerHTML=narrate(k);
+}
+function narrate(k){
+  const sorted=stations.map(s=>({s,r:hyp(s)})).sort((a,b)=>a.r-b.r),near=sorted[0],far=sorted[2];
+  const tpN=near.r/vp(),tsN=near.r/vs();
+  if(!fired)return `Hipocentro a <b>${fmt(P.depth)} km</b> de profundidade em ${ROCKS[P.rock].name}. Toque em <b>Disparar</b> e observe que a onda P chega sempre antes.`;
+  if(t<tpN)return `A ruptura acabou de começar. A frente <b style="color:var(--p)">P</b> avança a ${fmt(vp())} km/s e a <b>S</b> a ${fmt(vs())} km/s.`;
+  if(t<tsN)return `A onda <b style="color:var(--p)">P</b> chegou em <b>${near.s.n}</b> em ${fmt(tpN)} s. Veja as partículas: na P elas se comprimem e se afastam na direção em que a onda anda.`;
+  if(t<far.r/vs())return `A onda <b>S</b> chegou em ${near.s.n} ${fmt(tsN-tpN)} s depois da P. Na S as partículas balançam de lado, perpendicular à propagação. Por isso a S sacode mais.`;
+  const dt=tsN-tpN;
+  return `Todas as estações registraram. Em ${near.s.n}: Δt = ${fmt(dt)} s × ${fmt(k)} = <b>${fmt(dt*k,0)} km</b> até o hipocentro. Na vista <b>Mapa</b>, os três círculos se cruzam sobre o epicentro.`;
+}
+
+/* ---------------- sincronização da cena ---------------- */
+function syncScene(){
+  const h=W3(P.ex,P.ez,P.depth);hypo.position.copy(h);hypoGlow.position.copy(h);
+  epi.position.set(h.x,TOP+0.002,h.z);drop.geometry.setFromPoints([new THREE.Vector3(h.x,TOP,h.z),h]);drop.computeLineDistances();
+  fault.position.set(h.x,blockY,h.z);fault.rotation.y=-Math.PI/4;faultEdge.position.copy(fault.position);faultEdge.rotation.copy(fault.rotation);
+  stations.forEach(s=>{s.g.position.copy(W3(s.x,s.z,0))});
+  knobs.forEach(k=>{const c=k.modes?kc(k):{o:P,key:k.key,min:k.min,max:k.max};const f=(c.o[c.key]-c.min)/(c.max-c.min);k.dial.rotation.z=Math.PI*0.8-f*Math.PI*1.6});
+  $("rM").value=P.mag;$("rD").value=P.depth;$("rX").value=P.ex;$("rZ").value=P.ez;$("rock").value=P.rock;
+}
+function frameUpdate(dt){
+  if(running){t+=dt*P.speed;if(t>=TMAX){t=TMAX;running=false;$("bFire").textContent="▶ Disparar de novo"}}
+  const chal=$("tChal").checked,showP=$("tPart").checked&&!chal;
+  hypo.visible=epi.visible=drop.visible=fault.visible=faultEdge.visible=!chal;
+  const rp=vp()*t,rs=vs()*t,act=fired&&t>0&&!chal;
+  shP.visible=act&&rp<120;shS.visible=act&&rs<120;
+  shP.scale.setScalar(Math.max(0.001,rp*S));shS.scale.setScalar(Math.max(0.001,rs*S));
+  shP.position.copy(hypo.position);shS.position.copy(hypo.position);
+  shP.material.opacity=0.28*Math.max(0.25,1-rp/110);shS.material.opacity=0.3*Math.max(0.25,1-rs/110);
+  hypoGlow.intensity=fired&&t<2?(2-t)*3:0.4;hypo.scale.setScalar(fired&&t<1.5?1+(1.5-t)*1.5:1);
+  // partículas
+  pts.visible=showP;
+  if(showP){const zw=hypo.position.z,A0=Math.min(3.2,Math.max(0.5,ampF()*1.3)),lp=vp()/1.0,ls=vs()/1.0;
+    for(let k=0;k<N;k++){const xk=base[k*2],dk=base[k*2+1],dx=xk-P.ex,dy=dk-P.depth,r=Math.hypot(dx,dy)+1e-3,ux=dx/r,uy=dy/r;
+      let ex=0,ey=0,eP=0,eS=0;
+      if(fired&&t>0){const dec=Math.min(1,8/(r+2));
+        const xp=r-rp,envp=envelope(xp,lp),ap=A0*dec*envp*Math.sin(2*Math.PI*xp/lp);ex+=ux*ap;ey+=uy*ap;eP=envp*dec;
+        const xs=r-rs,envs=envelope(xs,ls),as=A0*1.6*dec*envs*Math.sin(2*Math.PI*xs/ls);ex+=-uy*as;ey+=ux*as;eS=envs*dec;}
+      pPos[k*3]=(xk+ex-WKM/2)*S;pPos[k*3+1]=TOP-(dk+ey)*S;pPos[k*3+2]=zw;
+      const b=0.32;pCol[k*3]=b+eP*0.05+eS*0.75;pCol[k*3+1]=b+0.08+eP*0.45+eS*0.35;pCol[k*3+2]=b+0.18+eP*0.7-eS*0.1;}
+    pGeo.attributes.position.needsUpdate=true;pGeo.attributes.color.needsUpdate=true;}
+  // estações
+  const k=vp()*vs()/(vp()-vs());
+  stations.forEach((s,i)=>{const v=fired?trace(s,t):0;s.drum.rotation.x+=running?dt*3:0;s.arm.position.x=Math.max(-0.03,Math.min(0.03,v*0.03));
+    s.g.position.y=TOP+Math.abs(v)*0.004*Math.sin(t*40);
+    const r=hyp(s),tp=r/vp(),ts=r/vs();s.lamp.material.color.setHex(!fired||t<tp?0x333333:t<ts?0x5cc4ee:0xf0aa45);
+    const c=circles[i];const show=$("tCirc").checked&&fired&&t>=ts;c.visible=show;
+    if(show){const d=(ts-tp)*k,re=Math.sqrt(Math.max(0,d*d-P.depth*P.depth));c.scale.setScalar(Math.max(0.001,re*S));c.position.set(s.g.position.x,TOP+0.003,s.g.position.z)}});
+}
+
+/* ---------------- câmera ---------------- */
+const VIEWS={lab:{p:[0.2,2.25,3.1],t:[0,1.15,0]},corte:{p:[0.05,1.4,1.45],t:[0,1.26,0]},mapa:{p:[0,3.05,0.02],t:[0,TOP,0]},wave:{p:[0.15,1.62,2.35],t:[0,1.2,0]},build:{p:[0.1,1.95,3.05],t:[0,1.2,0]}};
+let tween=null;
+function goView(v){const V=VIEWS[v];const portrait=innerWidth<innerHeight;const p=new THREE.Vector3(...V.p);if(portrait)p.sub(new THREE.Vector3(...V.t)).multiplyScalar(1.45).add(new THREE.Vector3(...V.t));
+  tween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:new THREE.Vector3(...V.t),k:0};
+  document.querySelectorAll("#views button").forEach(b=>b.classList.toggle("on",b.dataset.v===v))}
+
+/* ---------------- interação 3D ---------------- */
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),-TOP),hitP=new THREE.Vector3();
+let dragS=null,dragK=null,kY=0,kV=0;
+function setMouse(e){const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera)}
+canvas.addEventListener("pointerdown",e=>{setMouse(e);
+  const hits=ray.intersectObjects(pickables());
+  if(!hits.length)return;const o=hits[0].object;
+  if(o.userData.station){dragS=o.userData.station}else if(o.userData.knob){dragK=o.userData.knob;kY=e.clientY;const c=kc(dragK);kV=c.o[c.key]}
+  controls.enabled=false;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener("pointermove",e=>{
+  if(dragS){setMouse(e);if(ray.ray.intersectPlane(plane,hitP)){dragS.x=Math.round(Math.max(3,Math.min(WKM-3,hitP.x/S+WKM/2)));dragS.z=Math.round(Math.max(3,Math.min(DKM-3,hitP.z/S+DKM/2)));syncScene();updateHUD()}}
+  else if(dragK){const c=kc(dragK),v=kV+(kY-e.clientY)/160*(c.max-c.min);c.o[c.key]=Math.round(Math.max(c.min,Math.min(c.max,v))*20)/20;syncScene();HUDS[MODE]()}
+  else{setMouse(e);canvas.style.cursor=ray.intersectObjects(pickables()).length?"grab":"default"}});
+function pickables(){return MODE==="crust"?[...stations.map(s=>s.hit),...knobs.map(k=>k.body)]:knobs.map(k=>k.body)}
+const endDrag=()=>{dragS=dragK=null;controls.enabled=true};
+canvas.addEventListener("pointerup",endDrag);canvas.addEventListener("pointercancel",endDrag);
+
+/* ---------------- controles HTML ---------------- */
+const bind=(id,key,num=true)=>$(id).addEventListener("input",e=>{P[key]=num?parseFloat(e.target.value):e.target.value;syncScene();updateHUD()});
+bind("rM","mag");bind("rD","depth");bind("rX","ex");bind("rZ","ez");bind("rock","rock",false);bind("rV","speed");
+$("bFire").onclick=()=>{if(running){running=false;$("bFire").textContent="▶ Continuar";return}
+  if(t>=TMAX||!fired){t=0}fired=true;running=true;$("bFire").textContent="⏸ Pausar"};
+const PRE={sam:{mag:4,depth:5,ex:46,ez:22,rock:"granito",v:"corte"},deep:{mag:5,depth:25,ex:40,ez:20,rock:"granito",v:"corte"},
+  soft:{mag:4,depth:8,ex:46,ez:22,rock:"arenito",v:"lab"},tri:{mag:4.5,depth:6,ex:Math.round(15+Math.random()*50),ez:Math.round(8+Math.random()*24),rock:"granito",v:"mapa",chal:true}};
+document.querySelectorAll("#presets button").forEach(b=>b.onclick=()=>{const p=PRE[b.dataset.p];
+  if(b.dataset.p==="tri"){p.ex=Math.round(15+Math.random()*50);p.ez=Math.round(8+Math.random()*24)}
+  Object.assign(P,{mag:p.mag,depth:p.depth,ex:p.ex,ez:p.ez,rock:p.rock});$("tChal").checked=!!p.chal;$("tCirc").checked=true;
+  syncScene();goView(p.v);t=0;fired=true;running=true;$("bFire").textContent="⏸ Pausar";updateHUD()});
+document.querySelectorAll("#views button").forEach(b=>b.onclick=()=>goView(b.dataset.v));
+$("tHQ").onchange=e=>setQuality(e.target.checked);
+if(innerWidth<760)$("info").open=false;
+
+/* ---------------- loop ---------------- */
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let last=performance.now(),hudT=0;
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(tween){tween.k=Math.min(1,tween.k+dt*(reduce?10:1.4));const e=1-Math.pow(1-tween.k,3);camera.position.lerpVectors(tween.p0,tween.p1,e);controls.target.lerpVectors(tween.t0,tween.t1,e);if(tween.k>=1)tween=null}
+  if(MODE==="crust"){frameUpdate(dt);drawScreens()}else if(MODE==="wave"){waveUpdate(dt);drawScreensWave()}else{buildUpdate(dt);drawScreensBuild()}
+  controls.update();
+  hudT+=dt;if(hudT>0.2){hudT=0;HUDS[MODE]()}
+  if(HQ&&composer)composer.render();else renderer.render(scene,camera);
+  requestAnimationFrame(loop)}
+setQuality(innerWidth>=900);$("tHQ").checked=HQ;
+syncScene();updateHUD();if(innerWidth<innerHeight)goView("lab");
+requestAnimationFrame(loop);
+if(innerWidth<760){$("info2").open=false;$("info3").open=false}
+if(location.hash==="#mola")setMode("wave");
+else if(location.hash==="#construcoes")setMode("build");
+else setTimeout(()=>{if(MODE==="crust"){fired=true;running=true;t=0;$("bFire").textContent="⏸ Pausar"}},900);
+})();
+</script>
+
+</body>
+</html>
